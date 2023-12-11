@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/task/css/task.css">
+    <style>
+    </style>
+    <title>Task Submission</title>
+</head>
+
+<body>
+    <h1>创建识别任务</h1>
+    <form id="taskForm" enctype="multipart/form-data">
+        <label for="detectModel">选择识别模型:</label>
+
+        <select id="detectModel" name="detect_model" required style="font-size: 16px; margin-bottom: 20px;">
+
+            <option value="Tesseract">Tesseract</option>
+            <option value="Tesseract">Tesseract</option>
+        </select><br>
+
+        <label for="detectFile">选择文件:</label>
+        <input type="file" id="detectFile" name="detect_file" accept=".txt, .pdf, .jpg, .png, .zip, .tar.gz" required><br>
+        <button type="submit">创建识别任务</button>
+    </form>
+    <div id="response"></div>
+
+
+    <div class="status-container" style="display: block">
+        <span class="status-label" title="点击查看详情">Idle Nodes:</span>
+        <button id="idleNodes" class="status-value inactive" onclick="showDetails('idleNodes')" onmouseover="showTooltip(this)" onmouseout="hideTooltip(this)"></button>
+
+        <span class="status-label" title="点击查看详情">Pending Tasks:</span>
+        <button id="pendingTasks" class="status-value inactive" onclick="showDetails('pendingTasks')" onmouseover="showTooltip(this)" onmouseout="hideTooltip(this)"></button>
+
+        <span class="status-label" title="点击查看详情">Processing Tasks:</span>
+        <button id="processingTasks" class="status-value inactive" onclick="showDetails('processingTasks')" onmouseover="showTooltip(this)" onmouseout="hideTooltip(this)"></button>
+    </div>
+
+    <div id="detailsDropdown" class="dropdown-content">
+        <div class="modal-header">
+            <span class="modal-title info" xt-marked="ok">节点任务详情</span>
+            <span class="modal-close" onclick="hideDetails()" xt-marked="ok" style="margin-left: 86%;">X</span>
+        </div>
+        <div id="detailsContent">
+            <div id="detailsIdleNodes" class="details-content" style="">
+
+            </div>
+
+            <div id="detailsPendingTasks" class="details-content" style="">
+
+            </div>
+
+            <div id="detailsProcessingTasks" class="details-content" style="">
+
+            </div>
+            <button class="close" onclick="hideDetails()">Close</button>
+            <button  onclick="hideDetails()">Confirm</button>
+
+        </div>
+  </div>
+
+</body>
+</html>
+<script src="/static/task/js/task.js"></script>
+ <script>
+
+    document.getElementById("taskForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        var formData = new FormData(this);
+
+        fetch('/detect/create_task', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            var responseDiv = document.getElementById("response");
+            if (data.status === 'success') {
+                responseDiv.textContent = 'Task submitted successfully. Task ID: ' + data.message.task_id;
+                var a_tag = document.createElement("a");
+                responseDiv.appendChild(a_tag)
+                a_tag.style.marginLeft = "10px";
+                a_tag.innerText = "查看实时日志";
+                a_tag.target = "_blank"
+                a_tag.href = "/detect/progress/" + data.message.task_id;
+
+            } else {
+                responseDiv.textContent = 'Failed to submit task. Error: ' + data.message;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    });
+    var socket = new WebSocket("ws://127.0.0.1:8011/detect/ws_status_update");  // Adjust the WebSocket URL as needed
+
+    update_status(socket)
+
+ </script>

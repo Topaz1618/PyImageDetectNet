@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Page</title>
+    <style>
+        #task_id {
+          display: inline-block;
+          padding: 10px 15px;
+          border-radius: 8px;
+          background-color: #2ecc71; /* Emerald Green background color */
+          color: #fff; /* White text color */
+          font-weight: bold;
+          text-align: center;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add a subtle box shadow for depth */
+          transition: background-color 0.3s ease; /* Smooth transition for background color change */
+        }
+
+
+        #task_id span {
+          margin-left: 10px;
+          font-weight: normal;
+          /*color: #333; !* Text color for the task_id value *!*/
+        }
+
+        #task_id:hover {
+          background-color: #27ae60; /* Darker shade on hover */
+        }
+
+        #task_status {
+          margin-left: 1%;
+          display: inline-block;
+          padding: 8px 12px;
+          border-radius: 20px;
+          font-weight: bold;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          transition: background-color 0.3s ease;
+        }
+
+        /* Define styles for different statuses */
+        #task_status.pending {
+          background-color: #f39c12; /* Orange */
+          color: #fff;
+        }
+
+        #task_status.in_progress {
+          background-color: #3498db; /* Blue */
+          color: #fff;
+        }
+
+        #task_status.completed {
+          background-color: #2ecc71; /* Green */
+          color: #fff;
+        }
+
+        #task_status.failed {
+          background-color: #e74c3c; /* Red */
+          color: #fff;
+        }
+
+        #task_status.cancelled {
+          background-color: #7f8c8d; /* Gray */
+          color: #fff;
+        }
+
+        #task_status.retrying {
+          background-color: #e67e22; /* Orange */
+          color: #fff;
+        }
+
+        #task_status.timeout {
+          background-color: #9b59b6; /* Purple */
+          color: #fff;
+        }
+
+        #task_status:hover {
+          filter: brightness(90%);
+        }
+
+        .progress-container {
+            margin-top: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            background-color: #f3f3f3;
+            height: 30px;
+            border: 1px solid #ccc;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #4CAF50;
+            text-align: center;
+            line-height: 30px;
+            color: white;
+        }
+        .message-container {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 20px;
+        }
+
+        #task_desc {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="task_desc">
+<!--        <span id="task_id"> Task ID:  {{ task_id }} </span>-->
+        <span id="task_id">Task ID: <span>{{ task_id }}</span></span>
+
+        <span id="task_status"  style="display: inline-block"> {{ task_info["status"] }}</span>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-bar" id="progress-bar">
+            <div class="progress-bar-fill" id="progress-bar-fill"></div>
+        </div>
+    </div>
+
+    <div class="message-container" id="messages">
+        {% if task_info["status"] == 3 or task_info["status"] == 4 or task_info["status"] == 5 %}
+<!--            {{ task_info["log"]}}-->
+
+            {% for log in task_info["log"] %}
+                <span style="display: inline-block; width: 100%">{{ log }}</span>
+            {% end %}
+        {% end %}
+    </div>
+
+</body>
+</html>
+<script>
+
+const TaskStatusEN = {
+  1: "PENDING",
+  2: "IN_PROGRESS",
+  3: "COMPLETED",
+  4: "FAILED",
+  5: "CANCELLED",
+  6: "RETRYING",
+  7: "TIMEOUT"
+};
+
+const TaskStatusENToCN = {
+  1: "PENDING",
+  2: "IN_PROGRESS",
+  3: "COMPLETED",
+  4: "FAILED",
+  5: "CANCELLED",
+  6: "RETRYING",
+  7: "TIMEOUT"
+};
+
+const TaskStatus = {
+  PENDING: { value: 1 },
+  IN_PROGRESS: { value: 2 },
+  COMPLETED: { value: 3 },
+  FAILED: { value: 4 },
+  CANCELLED: { value: 5 },
+  RETRYING: { value: 6 },
+  TIMEOUT: { value: 7 }
+};
+
+// 通过值获取键名
+function getStatusKey(status) {
+  return Object.keys(TaskStatus).find(key => TaskStatus[key].value === status);
+}
+
+function getStatusText(status) {
+  return TaskStatusEN[status];
+}
+
+const socket = new WebSocket("ws://127.0.0.1:8011/ws");
+const messagesDiv = document.getElementById("messages");
+
+function updateProgressBar(percentage) {
+    var progressBarFill = document.getElementById("progress-bar-fill");
+    progressBarFill.style.width = percentage + "%";
+    progressBarFill.innerHTML = percentage + "%";
+}
+
+function updateProgressBarFailed() {
+    var progressBarFill = document.getElementById("progress-bar-fill");
+    progressBarFill.style.backgroundColor = "#e74c3c"; /* Red */
+}
+
+
+socket.onopen = event => {
+    console.log("WebSocket connection opened");
+    const data = {
+      "task_id": window.location.pathname.split("/")[3],
+    };
+
+    var jsonData = JSON.stringify(data);
+
+    socket.send(jsonData);
+};
+
+
+socket.onmessage = event => {
+    var response = event.data;
+    console.log(response, typeof response);
+    var jsonData = JSON.parse(response);
+    console.log(jsonData["log"])
+    console.log(jsonData["progress"])
+    console.log(jsonData["status"])
+    var status = jsonData["status"];
+
+    console.log(status)
+
+    updateProgressBar(jsonData["progress"]);
+
+    var status_tag  = document.getElementById("task_status");
+    status_tag.className = getStatusText(status).toLowerCase();
+
+
+    if (status === TaskStatus.FAILED.value || status === TaskStatus.CANCELLED.value){
+        console.log("!!!!!", getStatusKey(status));
+        updateProgressBarFailed();
+        socket.close()
+    }else if(status === TaskStatus.COMPLETED.value){
+        socket.close()
+    }else{
+        var span_tag = document.createElement("span_tag")
+        span_tag.innerText = jsonData["log"] +"\n"
+        messagesDiv.appendChild(span_tag);
+
+    }
+
+
+};
+
+socket.onclose = event => {
+    console.log("WebSocket connection closed");
+};
+
+function ConvertIntToText(){
+    var status = document.getElementById("task_status").innerText;
+    var statusText = getStatusText(status);
+    document.getElementById("task_status").innerText = statusText;
+
+}
+ConvertIntToText()
+</script>

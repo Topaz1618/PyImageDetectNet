@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>多文件上传</title>
+</head>
+<body>
+  <h1>多文件上传</h1>
+  <input id="fileInput" type="file" multiple>
+  <button id="uploadButton">上传</button>
+
+  <div id="response" style="  height: 200px; color: red;"></div>
+  <script>
+    document.getElementById('uploadButton').addEventListener('click', function() {
+      var files = document.getElementById('fileInput').files;
+      var formData = new FormData();
+
+      for (var i = 0; i < files.length; i++) {
+        formData.append('files', files[i]);
+      }
+
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', '/upload_package');
+
+      xhr.addEventListener('load', function() {
+        if (xhr.status === 200) {
+          var response = JSON.parse(xhr.responseText);
+          var message = response.message;
+
+          var responseElement = document.getElementById('response');
+             for (var i = 0; i < message.length; i++) {
+              var item = message[i];
+              var span_tag = document.createElement("span");
+              span_tag.innerText = item + "上传完成\n" ;
+              responseElement.appendChild(span_tag)
+            }
+
+        } else {
+
+          var responseElement = document.getElementById('response');
+          responseElement.innerText = "错误";
+        }
+      });
+
+      xhr.send(formData);
+    });
+  </script>
+</body>
+</html>

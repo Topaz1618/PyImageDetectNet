@@ -1,0 +1,123 @@
+/*Happy 2020! 🎉*/
+
+:root {
+	--bright: #fff;
+	--dark: #000;
+}
+
+#container {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	font-family: "IBM Plex Mono", monospace;
+	font-size: 2vh;
+	color: var(--dark);
+	overflow: hidden;
+	background: var(--bright);
+}
+
+#settings {
+	position: absolute;
+	top: 1vh;
+	right: 30vh;
+	font-size: 3vh;
+	color: var(--bright);
+	cursor: pointer;
+	transition: right 0.2s;
+}
+
+#abt {
+	position: absolute;
+	top: -40vh;
+	left: calc(100vw - 40vh);
+	height: 60vh;
+	width: 60vh;
+	border-radius: 100%;
+	background: var(--dark);
+	transition: all 0.5s cubic-bezier(0.87, -0.2, 0.19, 1.2);
+}
+
+#txt {
+	position: absolute;
+	top: 42vh;
+	left: 12vh;
+	height: 22vh;
+	width: 25vh;
+	font-size: 1.5vh;
+	text-align: center;
+	color: var(--bright);
+	background: none;
+}
+
+#dm {
+	position: absolute;
+	top: 42vh;
+	right: -1vh;
+	width: 25vh;
+	font-size: 2.2vh;
+	cursor: pointer;
+}
+
+#barcontainer {
+	position: absolute;
+	top: 18vh;
+	left: 0;
+	right: 0;
+	height: 75vh;
+	overflow: hidden;
+}
+
+#title {
+	font-size: 7vh;
+	margin-left: 10vw;
+	margin-bottom: 7vh;
+	font-weight: 700;
+}
+
+#yp,
+#mp,
+#dp,
+#hp,
+#mip {
+	margin-left: 10vw;
+	margin-bottom: 1vh;
+}
+
+#ygraph,
+#mgraph,
+#dgraph,
+#hgraph,
+#migraph {
+	height: 3vh;
+	width: 80vw;
+	border: 1px solid var(--dark);
+	overflow: hidden;
+	margin-bottom: 5vh;
+	margin-left: 10vw;
+}
+
+#ybar,
+#mbar,
+#dbar,
+#hbar,
+#mibar {
+	height: 3vh;
+	width: 0vw;
+	background: var(--dark);
+	transition: width 0.5s;
+}
+
+a,
+a:link,
+a:visited {
+	color: var(--bright);
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--dark: #fff;
+		--bright: #000;
+	}
+}

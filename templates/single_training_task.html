@@ -1,0 +1,80 @@
+{% extends 'layout/detection_common.html' %}
+
+{% block title %}
+<title> Task {{ task_id }} 处理结果 </title>
+{% end %}
+
+
+{% block content %}
+<div style="width: 80%; margin-left: 15%; margin-top: 5%">
+    <h3>我的识别</h3>
+    <ul class="custom-list" style=" margin-top: 2%">
+        <li style="list-style: none;  padding: 10px; margin-bottom: 10px; ">
+            <button class="span_button modal-title info" style="width: 28%;font-size: 1.3rem; "> 模型名称 </button>
+            <button class="span_button modal-title info" style="width: 12%;font-size: 1.3rem;"> 数据集名称 </button>
+            <button class="span_button modal-title info" style="width: 40%;font-size: 1.3rem;"> 训练结果 </button>
+<!--            <button class="span_button modal-title info" style="width: 16%;font-size: 1.3rem;"> 置信度 </button>-->
+
+        </li>
+<!--        {{ task_result }}-->
+
+
+        <button class="modal-title  span_button" style="; width: 28%; color: #e62246cc;font-weight: normal "> {{ task_result["model"] }}</button>
+        <button class="modal-title  span_button" style="; width: 12%; color: #e62246cc;font-weight: normal "> {{ task_result["dataset"] }}</button>
+
+
+            <button class="modal-title orange span_button" style="text-align: left; width: 40%; color: #e62246cc;font-weight: normal ">
+                {% for epoch, item in task_result["res"].items() %}
+                    <a href="#json" data-result ="{{ item }}" data-epoch="{{ epoch }}"  onclick="updateTextarea(this)" style="margin-left: 10px; text-decoration: underline"> {{epoch}} </a>
+                {% end %}
+            </button>
+
+    </ul>
+
+      <div class="text-indigo" id="json" style="margin-top: 3%">JSON结果</div>
+        <textarea id="jsonTextarea" readonly>{{ task_result["res"] }}</textarea>
+        <br>
+    <button id="saveButton">保存结果</button>
+    <button id="refreshButton" class="button primary" onclick="refreshPage()">刷新页面</button>
+</div>
+
+{% end %}
+{% block js %}
+
+  <script>
+
+      function refreshPage() {
+      location.reload(); // 刷新页面
+    }
+
+    function updateTextarea(obj){
+        var epoch = obj.getAttribute("data-epoch");
+        var result =  obj.getAttribute("data-result");
+        const jsonTextarea = document.getElementById("jsonTextarea");
+        const data = {};
+        data[epoch] = result;
+        jsonTextarea.value = JSON.stringify(data, null, 2);
+    }
+
+
+    // JavaScript 代码
+    document.addEventListener("DOMContentLoaded", function() {
+      // 模拟 JSON 数据，您可以将其替换为实际的 JSON 结果
+      const jsonTextarea = document.getElementById("jsonTextarea");
+      const saveButton = document.getElementById("saveButton");
+
+      // jsonTextarea.value = JSON.stringify(jsonTextarea, null, 2);
+
+      // 点击保存按钮时，将文本框内容保存到本地
+      saveButton.addEventListener("click", function() {
+        const textToSave = jsonTextarea.value;
+        const blob = new Blob([textToSave], { type: "text/plain" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "json_result.txt";
+        a.click();
+      });
+    });
+  </script>
+
+{% end %}

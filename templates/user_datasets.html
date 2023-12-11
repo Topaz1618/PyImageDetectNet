@@ -1,0 +1,182 @@
+{% extends 'layout/detection_common.html' %}
+
+
+{% block title %}
+<title> 我的数据集 </title>
+{% end %}
+
+{% block content %}
+
+<div style="width: 80%; margin-left: 15%; margin-top: 5%">
+        <h3>我的数据集</h3>
+    <ul class="custom-list" style=" margin-top: 2%">
+        <li style="list-style: none;  padding: 10px; margin-bottom: 10px; ">
+            <button class="span_button modal-title info" style="width: 30%;font-size: 1.3rem; "> 数据集名称 </button>
+            <button class="span_button modal-title info" style="width: 22%;font-size: 1.3rem;"> 适用模型</button>
+            <button class="span_button modal-title info" style="width: 25%;font-size: 1.3rem;"> 上传时间 </button>
+            <button class="span_button modal-title info" style="width: 7%;font-size: 1.3rem;"> 管理 </button>
+        </li>
+<!--        {{ dataset_list }}-->
+        {% for item in dataset_list %}
+        <li style=" padding: 10px; margin-bottom: 10px;  ">
+            <button class="modal-title  span_button" style="width: 30%; font-weight: normal">{{ item["dataset_name"] }}</button>
+<!--          e62246cc   2236e6cc-->
+            <button class="modal-title  span_button" style="; width: 20%; color: #e62246cc;font-weight: normal "> {{ item["model_name"] }}</button>
+            <button class="modal-title  span_button" style="width: 30%; color: #5630aac7; font-weight: normal" > {{ item["created_time"] }}</button>
+             {% if item["dataset_source"] == 1%}
+                <button class="span_confirm" disabled style="cursor: not-allowed;" onclick="DeleteDataset(this)" data-filename="{{ item['filename'] }}" data-dataset-name="{{ item['dataset_name'] }}">
+                    <span class="mdi-delete"></span>
+                </button>
+            {% else %}
+                <button  class="span_confirm " onclick="DeleteDataset(this)" data-filename="{{ item['filename'] }}" data-dataset-name="{{ item['dataset_name'] }}">、
+                <span class="mdi-delete"></span>
+                </button>
+            {% end %}
+        </li>
+        {% end %}
+    </ul>
+</div>
+{% end %}
+
+{% block js %}
+<script src="/static/task/js/jquery-3.6.0.min.js"></script>
+<script src="/static/task/js/crypto-js.min.js"></script>
+<script>
+
+    const secretKey = 'YourSecretKey123'; // Replace this with your secret key
+
+    function decryptData(encryptedData) {
+        var key = CryptoJS.enc.Utf8.parse(secretKey);
+        var ciphertext = CryptoJS.enc.Base64.parse(encryptedData);
+
+        // Get the IV by taking the first 16 bytes
+        var iv = ciphertext.clone();
+        iv.sigBytes = 16; // Set IV length to 16 bytes
+        iv.clamp(); // Remove ciphertext leaving only IV'
+        console.log("ciphertext", ciphertext)
+        console.log("iv", iv)
+        console.log("ciphertext", ciphertext)
+
+        ciphertext.words.splice(0, 4); // Remove IV from ciphertext
+        ciphertext.sigBytes -= 16; // Adjust ciphertext length
+        console.log("ciphertext2", ciphertext)
+
+        // Perform decryption
+        var decrypted = CryptoJS.AES.decrypt({ ciphertext: ciphertext }, key, {
+            iv: iv,
+            mode: CryptoJS.mode.CBC,
+            padding: CryptoJS.pad.Pkcs7});
+
+        const decryptedData = new Uint8Array(decrypted.sigBytes);
+        for (let i = 0; i < decrypted.sigBytes; i++) {
+            decryptedData[i] = decrypted.words[i >>> 2] >>> (24 - (i % 4) * 8) & 0xff;
+        }
+
+        return decryptedData;
+    }
+
+
+    function UpdateProcessBar(chunk, chunks) {
+        let percentage = (chunk / chunks) * 100;
+        percentage = percentage.toFixed(2);
+        var progressBarFill = document.getElementById("progress-bar-fill");
+        progressBarFill.style.width = percentage + "%";
+        progressBarFill.innerHTML = percentage + "%";
+
+    }
+
+    function UpdateProcessBarFull(){
+        var percentage = 100
+        var progressBarFill = document.getElementById("progress-bar-fill");
+        progressBarFill.style.width = percentage + "%";
+        progressBarFill.innerHTML = percentage + "%";
+    }
+
+
+    function DownloadFile(obj){
+        console.log(obj.getAttribute("data-dataset-name"), obj.getAttribute("data-username"))
+
+
+        var slices = [];
+        var dataset_name = obj.getAttribute("data-dataset-name");
+        var username = obj.getAttribute("data-username");
+        var total_chunks = obj.getAttribute("data-chunks");
+        var filename = obj.getAttribute("data-filename")
+
+
+        var fileUrl = `download_dataset?dataset_name=${dataset_name}&username=${username}`;
+
+        function downloadChunk(ChunkNumber) {
+        $.ajax({
+            url: fileUrl,
+            type: 'GET',
+            headers: {
+                'X-Chunk-Number': ChunkNumber,
+            },
+            processData: false,
+            success: function (chunk) {
+                chunk = chunk.split("==== End Encryption ====")[0];
+                console.log("chunk length", chunk.length, chunk, "idx:", ChunkNumber)
+                var decryptedData = decryptData(chunk);
+                console.log("Decrypted data length:", decryptedData.length);
+
+                slices.push(decryptedData);
+
+                ChunkNumber += 1;
+
+                if (ChunkNumber < total_chunks) {
+                    downloadChunk(ChunkNumber);
+                    UpdateProcessBar(ChunkNumber, total_chunks);
+                } else {
+                    UpdateProcessBarFull();
+
+                    var blob = new Blob(slices, {type: 'application/octet-stream'});
+                    var url = window.URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+
+                }
+            }
+        });
+        }
+
+        downloadChunk(0)
+    }
+
+    function DeleteDataset(obj){
+        var dataset_name = obj.getAttribute("data-dataset-name");
+        var filename = obj.getAttribute("data-filename");
+        var formData = new FormData();
+
+        // 将数据添加到 FormData
+        formData.append('dataset_name', dataset_name);
+        formData.append('filename', filename);
+
+        // 发送 FormData 到后端
+        fetch('/user/delete_dataset', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => {
+          // 处理响应
+          console.log('FormData 已发送到后端');
+            if (response.status === 200) {
+              // 刷新页面
+              window.location.reload();
+            }
+        })
+        .catch(error => {
+          // 错误处理
+          console.error('发送 FormData 到后端时出错:', error);
+        });
+
+    }
+
+</script>
+
+{% end %}

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Large File Chunked Upload</title>
+</head>
+<body>
+  <input type="file" id="fileInput" />
+  <button onclick="uploadFile()">Upload</button>
+  <div id="progress"></div>
+</body>
+</html>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <script>
+
+    const secretKey = 'YourSecretKey123'; // Replace this with your secret key
+
+
+    async function uploadFile() {
+      const fileInput = document.getElementById('fileInput');
+      const file = fileInput.files[0];
+      const chunkSize = 1024; // Chunk size in bytes
+      let offset = 0;
+
+      while (offset < file.size) {
+        const chunk = file.slice(offset, offset + chunkSize);
+        const formData = new FormData();
+
+        formData.append('file', chunk, file.name);
+        // formData.append('file', encryptedChunk, file.name);
+
+        const response = await fetch(`/upload?offset=${offset}`, {
+          method: 'POST',
+          body: formData
+        });
+
+        // Update progress or handle response
+        const progressDiv = document.getElementById('progress');
+        const progress = ((offset + chunkSize) / file.size) * 100;
+        progressDiv.innerText = `Upload Progress: ${progress.toFixed(2)}%`;
+
+        offset += chunkSize;
+      }
+
+      // File upload complete
+      alert('File uploaded successfully!');
+    }
+
+  </script>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Large File Chunked Upload</title>
+</head>
+<body>
+  <input type="file" id="fileInput" />
+  <button onclick="uploadFile()">Upload</button>
+  <div id="progress"></div>
+
+</body>
+</html>
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <script>
+
+    const secretKey = 'YourSecretKey123'; // Replace this with your secret key
+
+
+    async function encryptData(data) {
+      const key = CryptoJS.enc.Utf8.parse(secretKey);
+      const iv = CryptoJS.lib.WordArray.random(16);
+      const encrypted = CryptoJS.AES.encrypt(data, key, {
+        iv: iv,
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7
+      });
+      return iv.concat(encrypted.ciphertext).toString(CryptoJS.enc.Base64);
+    }
+
+
+    async function uploadFile() {
+      const fileInput = document.getElementById('fileInput');
+      const file = fileInput.files[0];
+      const chunkSize = 1024; // Chunk size in bytes
+      let offset = 0;
+
+      while (offset < file.size) {
+        const chunk = file.slice(offset, offset + chunkSize);
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          var result = event.target.result;
+          console.log('Chunk content:', result); // 打印读取到的内容
+          encryptData(result).then(encryptedData => {
+            console.log('Encrypted:', encryptedData);
+
+            const blob = new Blob([encryptedData], { type: 'application/octet-stream' });
+            const formData = new FormData();
+            formData.append('file', blob, file.name);
+
+
+            const response =  fetch(`/upload?offset=${offset}`, {
+              method: 'POST',
+              body: formData
+            });
+
+       });};
+
+        reader.readAsText(chunk);
+
+        // Update progress or handle response
+        const progressDiv = document.getElementById('progress');
+        const progress = ((offset + chunkSize) / file.size) * 100;
+        progressDiv.innerText = `Upload Progress: ${progress.toFixed(2)}%`;
+
+        offset += chunkSize;
+      }
+
+      // File upload complete
+      alert('File uploaded successfully!');
+    }
+
+  </script>

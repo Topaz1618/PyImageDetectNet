@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>模型上传</title>
+    <link rel="stylesheet" href="/static/task/css/task.css">
+
+</head>
+<body>
+<div class="training_container" style="margin-top: 5%">
+    <h1>模型上传</h1>
+    <div class="form-field">
+        <label for="model_file">选择模型文件:</label>
+        <input type="file" id="model_file" >
+    </div>
+    <div class="form-field">
+        <label for="model_name">模型名称:</label>
+        <input type="text" id="model_name">
+    </div>
+    <div class="form-field">
+        <label for="version">版本:</label>
+        <input type="number" id="version" step="0.1" value=1.0>
+    </div>
+    <div class="form-field">
+        <label for="model_desc">模型描述:</label>
+        <input type="text" id="model_desc" >
+    </div>
+    <button onclick="UploadModelFile()">确认上传</button>
+</div>
+
+    <div id="progress_bar_title">Progress</div>
+    <div class="progress-container">
+        <div class="progress-bar" id="progress-bar">
+            <div class="progress-bar-fill" id="progress-bar-fill" style="width: 0%"  >0%</div>
+        </div>
+    </div>
+
+</body>
+</html>
+
+
+
+<script src="/static/task/js/crypto-js.min.js"></script>
+<script src="/static/task/js/jquery-3.6.0.min.js"></script>
+<script>
+
+    BlockSize = 2 // 1 M
+
+    const secretKey = 'YourSecretKey123'; // Replace this with your secret key
+
+    function decryptData(encryptedData) {
+        var key = CryptoJS.enc.Utf8.parse(secretKey);
+        var ciphertext = CryptoJS.enc.Base64.parse(encryptedData);
+
+        // Get the IV by taking the first 16 bytes
+        var iv = ciphertext.clone();
+        iv.sigBytes = 16; // Set IV length to 16 bytes
+        iv.clamp(); // Remove ciphertext leaving only IV'
+        console.log("ciphertext", ciphertext)
+        console.log("iv", iv)
+        console.log("ciphertext", ciphertext)
+
+        ciphertext.words.splice(0, 4); // Remove IV from ciphertext
+        ciphertext.sigBytes -= 16; // Adjust ciphertext length
+        console.log("ciphertext2", ciphertext)
+
+        // Perform decryption
+        var decrypted = CryptoJS.AES.decrypt({ ciphertext: ciphertext }, key, {
+            iv: iv,
+            mode: CryptoJS.mode.CBC,
+            padding: CryptoJS.pad.Pkcs7});
+
+        const decryptedData = new Uint8Array(decrypted.sigBytes);
+        for (let i = 0; i < decrypted.sigBytes; i++) {
+            decryptedData[i] = decrypted.words[i >>> 2] >>> (24 - (i % 4) * 8) & 0xff;
+        }
+
+        return decryptedData;
+    }
+
+    async function encryptData(data) {
+      console.log("data:", data)
+      var key = CryptoJS.enc.Utf8.parse(secretKey);
+      var iv = CryptoJS.lib.WordArray.random(16);
+      var wordArray = CryptoJS.lib.WordArray.create(new Uint8Array(data));
+
+      var encrypted = CryptoJS.AES.encrypt(wordArray, key, {
+        iv: iv,
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7
+      });
+
+       var res = iv.concat(encrypted.ciphertext).toString(CryptoJS.enc.Base64);
+
+       console.log("res: ", res);
+
+       return res;
+    }
+
+    function CheckIsModelExists(){
+        var model_name = document.getElementById('model_name').value;
+        var version = document.getElementById('version').value;
+
+        var formData = new FormData();
+        formData.append('model_name', model_name);
+        formData.append('version', version);
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                url: '/training_model/check_is_model_exists',
+                type: 'GET',
+                data: formData,
+                processData: false,
+                contentType: false,
+
+                success: function(response) {
+
+                    if(response["error_code"]== "1000"){
+                        resolve(true)
+                    }else{
+                        alert(response["error_msg"]);
+                    }
+                },
+                error: function() {
+                    alert('出现错误，请重试！');
+                }
+            });
+        })
+
+    }
+
+    function UpdateProcessBar(start, chunks) {
+        if (start > 0) {
+            var idx = parseInt(start / BlockSize);
+            let percentage = (idx / chunks) * 100;
+            percentage = percentage.toFixed(2);
+            var progressBarFill = document.getElementById("progress-bar-fill");
+            progressBarFill.style.width = percentage + "%";
+            progressBarFill.innerHTML = percentage + "%";
+        }
+    }
+
+    function UpdateProcessBarFull(){
+        var percentage = 100
+        var progressBarFill = document.getElementById("progress-bar-fill");
+        progressBarFill.style.width = percentage + "%";
+        progressBarFill.innerHTML = percentage + "%";
+    }
+
+    async function UploadChunk(file, uploaded_size){
+        var model_name = document.getElementById('model_name').value;
+        var version = document.getElementById('version').value;
+        var model_desc = document.getElementById('model_desc').value;
+        const content_type = file.type;
+        const file_size = file.size;
+        const filename = file.name;
+        const chunkSize = BlockSize // 10 M 每次
+        const chunks = Math.ceil(file.size / chunkSize); // 总共的切片数
+
+
+        var formData = new FormData();
+        formData.append('model_name', model_name);
+        formData.append('version', version);
+        formData.append('model_desc', model_desc);
+        formData.append('file_size', file_size);
+        formData.append('chunks', chunks);
+        formData.append('filename', filename);
+        formData.append('content_type', content_type);
+        formData.append('chunk_size', chunkSize);
+
+        let currentChunk = 0;
+
+        if (uploaded_size > 0) {
+          currentChunk = Math.floor(uploaded_size / chunkSize);
+        }
+        const start = Math.max(uploaded_size, currentChunk * chunkSize)
+        const end = Math.min(start + chunkSize, file.size);
+
+        const chunk = file.slice(start, end);
+        const reader = new FileReader();
+        var arrayBuffer = await new Promise((resolve) => {
+            reader.onloadend = function() {
+                resolve(reader.result);
+            };
+            reader.readAsArrayBuffer(chunk);
+        });
+        var encryptedData = await encryptData(arrayBuffer);
+        console.log("Encrypted Data: ", encryptedData.length, encryptedData)
+        var chunk_data = new Blob([encryptedData]);
+        formData.append('file', chunk_data);
+
+
+        $.ajax({
+            url: '/training_model/upload_model',
+            type: 'POST',
+            headers: {
+                'X-Chunk-Number': currentChunk+1,
+            },
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (response) {
+                if (currentChunk < chunks - 1) {
+                    currentChunk++;
+                    UpdateProcessBar(start, chunks);
+                    UploadChunk(file, start + chunkSize);
+
+                } else {
+                    console.log("done")
+                    UpdateProcessBarFull();
+
+                }
+            },
+            error: function (response) {
+                console.log(response)
+            }
+        });
+    }
+
+
+    async function UploadModelFile(){
+
+        const file = document.getElementById("model_file").files[0];
+
+        var res = CheckIsModelExists()
+        console.log(res);
+
+        if (res){
+            var uploaded_size = 0
+            UploadChunk(file, uploaded_size);
+        }else{
+            console.log("ok")
+        }
+
+    };
+
+</script>

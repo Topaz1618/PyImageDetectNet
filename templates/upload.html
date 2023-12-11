@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Large File Chunked Upload</title>
+</head>
+<body>
+  <input type="file" id="fileInput" />
+  <button onclick="uploadFile()">Upload</button>
+
+
+  <button onclick="DownloadFile()">Download</button>
+  <div id="progress"></div>
+
+</body>
+</html>
+
+
+<script src="/static/task/js/crypto-js.min.js"></script>
+<script src="/static/task/js/jquery-3.6.0.min.js"></script>
+<script>
+  const secretKey = 'YourSecretKey123'; // Replace this with your secret key
+
+  function decryptData(encryptedData) {
+    var key = CryptoJS.enc.Utf8.parse(secretKey);
+    var ciphertext = CryptoJS.enc.Base64.parse(encryptedData);
+
+    // Get the IV by taking the first 16 bytes
+    var iv = ciphertext.clone();
+    iv.sigBytes = 16; // Set IV length to 16 bytes
+    iv.clamp(); // Remove ciphertext leaving only IV'
+      console.log("ciphertext", ciphertext)
+      console.log("iv", iv)
+      console.log("ciphertext", ciphertext)
+
+    ciphertext.words.splice(0, 4); // Remove IV from ciphertext
+    ciphertext.sigBytes -= 16; // Adjust ciphertext length
+      console.log("ciphertext2", ciphertext)
+
+    // Perform decryption
+    var decrypted = CryptoJS.AES.decrypt(
+      { ciphertext: ciphertext },
+      key,
+      {
+        iv: iv,
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7
+      }
+  );
+
+    const decryptedData = new Uint8Array(decrypted.sigBytes);
+    for (let i = 0; i < decrypted.sigBytes; i++) {
+        decryptedData[i] = decrypted.words[i >>> 2] >>> (24 - (i % 4) * 8) & 0xff;
+    }
+
+    return decryptedData;
+  }
+
+    async function encryptData(data) {
+      console.log("data:", data)
+      var key = CryptoJS.enc.Utf8.parse(secretKey);
+      var iv = CryptoJS.lib.WordArray.random(16);
+      var wordArray = CryptoJS.lib.WordArray.create(new Uint8Array(data));
+
+      var encrypted = CryptoJS.AES.encrypt(wordArray, key, {
+        iv: iv,
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7
+      });
+
+       var res = iv.concat(encrypted.ciphertext).toString(CryptoJS.enc.Base64);
+
+       console.log("res: ", res);
+
+       return res;
+    }
+
+    function DownloadFile() {
+      var start = 0;
+      var ChunkNumber = 0;
+      var filename = "a.txt"
+      var total_size = 344
+      var chunk_size = 344;  // 我们的切片大小为 2 bytes
+      var fileUrl = `download_file?filename=${filename}`;
+
+      var progressBar = document.getElementById('progress');
+
+
+      var slices = [];
+
+
+      function downloadChunk() {
+          $.ajax({
+              url: fileUrl,
+              type: 'GET',
+              headers: {
+                  'Range': 'bytes=' + start,
+                   'file_size': total_size,
+                  'filename': encodeURIComponent(filename),
+                  'X-Chunk-Number': ChunkNumber,
+              },
+              processData: false,
+              success: function (chunk) {
+
+                  chunk = chunk.split("==== End Encryption ====")[0];
+
+                  // 解密 chunk
+                  console.log("chunk length", chunk.length, "idx:", ChunkNumber, chunk)
+                  var decryptedData = decryptData(chunk);
+                  console.log("Decrypted data length:", decryptedData.length);
+                  slices.push(decryptedData);
+
+                  start += chunk_size;
+                  ChunkNumber += 1;
+
+                  if (progressBar) {
+                      progressBar.style.width = (start / total_size * 100).toFixed(2) + '%';
+                  }
+
+                  if (start < total_size) {
+                      downloadChunk();
+
+                  } else {
+                      var blob = new Blob(slices, {type: 'application/octet-stream'});
+                      var url = window.URL.createObjectURL(blob);
+                      var a_tag = document.createElement('a');
+                      a_tag.style.display = 'none';
+                      a_tag.href = url;
+                      a_tag.download = filename;
+                      document.body.appendChild(a);
+                      a_tag.click();
+                      window.URL.revokeObjectURL(url);
+                  }
+              }
+          });
+      }
+
+      downloadChunk();
+
+  }
+
+    async function uploadFile() {
+      const fileInput = document.getElementById('fileInput');
+      const file = fileInput.files[0];
+      const chunkSize = 67; // Chunk size in bytes
+      let offset = 0;
+
+      while (offset < file.size) {
+        const chunk = file.slice(offset, offset + chunkSize);
+        console.log("chunk", chunk)
+        const reader = new FileReader();
+        var arrayBuffer = await new Promise((resolve) => {
+            reader.onloadend = function() {
+                resolve(reader.result);
+            };
+            reader.readAsArrayBuffer(chunk);
+        });
+
+        var encryptedData = await encryptData(arrayBuffer);
+        console.log("Encryted Data: ", encryptedData.length, encryptedData)
+
+        var chunk_data = new Blob([encryptedData]);
+
+
+        const xhr = new XMLHttpRequest();
+        const formData = new FormData();
+        formData.append('file', chunk_data, file.name);
+
+        xhr.open('POST', `/upload?offset=${offset}`, false); // 第三个参数设置为 false，表示同步请求
+        xhr.send(formData);
+
+        // Update progress or handle response
+        const progressDiv = document.getElementById('progress');
+        const progress = ((offset + chunkSize) / file.size) * 100;
+        progressDiv.innerText = `Upload Progress: ${progress.toFixed(2)}%`;
+
+        offset += chunkSize;
+      }
+
+      // File upload complete
+      alert('File uploaded successfully!');
+    }
+
+  </script>

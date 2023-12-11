@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>数据集上传</title>
+</head>
+<body>
+    <h1>数据集上传</h1>
+    <input type="file" id="datasetFileInput">
+    <br>
+    <label for="datasetDescriptionInput">数据集名称:</label>
+    <input type="text" id="datasetNameInput">
+    <br>
+    <label for="datasetDescriptionInput">数据集描述描述:</label>
+    <input type="text" id="datasetDescriptionInput">
+    <br>
+    <button onclick="uploadDataset()">上传</button>
+
+    <script>
+    function uploadDataset() {
+        var fileInput = document.getElementById('datasetFileInput');
+        var file = fileInput.files[0];
+        var formData = new FormData();
+        formData.append('dataset_file', file);
+
+        var datasetDescriptionInput = document.getElementById('datasetDescriptionInput');
+        var datasetNameInput = document.getElementById('datasetNameInput');
+
+        formData.append('description', datasetDescriptionInput.value);
+        formData.append('name', datasetNameInput.value);
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/training_model/upload_dataset', true);
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                var response = JSON.parse(xhr.responseText);
+                alert(response.message);
+            } else {
+                alert('上传数据集失败。');
+            }
+        };
+        xhr.send(formData);
+    }
+    </script>
+</body>
+</html>

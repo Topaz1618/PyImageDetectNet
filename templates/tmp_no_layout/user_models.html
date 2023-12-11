@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Files</title>
+        <link rel="stylesheet" href="/static/task/css/task.css">
+</head>
+<body>
+    <h1>Files</h1>
+    <ul>
+        {% for item in data %}
+        <li>
+            <p>Filename: {{ item["filename"] }}</p>
+            <p>User: {{ item["user_id"] }}</p>
+            <p>Model Name: {{ item["model_name"] }}</p>
+            <p>Version: {{ item["version"] }}</p>
+            <p>Created Time: {{ item["created_time"] }}</p>
+            <button onclick="DownloadFile(this)" data-filename="{{ item['filename'] }}" data-model-name="{{ item['model_name'] }}" data-version="{{ item['version'] }}" data-username="{{ item['user_id'] }}" data-chunks="{{ item['total_chunk'] }}">Download</button>
+        </li>
+        {% end %}
+    </ul>
+
+
+    <div id="progress_bar_title">Progress</div>
+    <div class="progress-container">
+        <div class="progress-bar" id="progress-bar">
+            <div class="progress-bar-fill" id="progress-bar-fill" style="width: 0%"  >0%</div>
+        </div>
+    </div>
+</body>
+</html>
+
+<script src="/static/task/js/jquery-3.6.0.min.js"></script>
+<script src="/static/task/js/crypto-js.min.js"></script>
+<script>
+
+    const secretKey = 'YourSecretKey123'; // Replace this with your secret key
+
+    function decryptData(encryptedData) {
+        var key = CryptoJS.enc.Utf8.parse(secretKey);
+        var ciphertext = CryptoJS.enc.Base64.parse(encryptedData);
+
+        // Get the IV by taking the first 16 bytes
+        var iv = ciphertext.clone();
+        iv.sigBytes = 16; // Set IV length to 16 bytes
+        iv.clamp(); // Remove ciphertext leaving only IV'
+        console.log("ciphertext", ciphertext)
+        console.log("iv", iv)
+        console.log("ciphertext", ciphertext)
+
+        ciphertext.words.splice(0, 4); // Remove IV from ciphertext
+        ciphertext.sigBytes -= 16; // Adjust ciphertext length
+        console.log("ciphertext2", ciphertext)
+
+        // Perform decryption
+        var decrypted = CryptoJS.AES.decrypt({ ciphertext: ciphertext }, key, {
+            iv: iv,
+            mode: CryptoJS.mode.CBC,
+            padding: CryptoJS.pad.Pkcs7});
+
+        const decryptedData = new Uint8Array(decrypted.sigBytes);
+        for (let i = 0; i < decrypted.sigBytes; i++) {
+            decryptedData[i] = decrypted.words[i >>> 2] >>> (24 - (i % 4) * 8) & 0xff;
+        }
+
+        return decryptedData;
+    }
+
+
+    function UpdateProcessBar(chunk, chunks) {
+        let percentage = (chunk / chunks) * 100;
+        percentage = percentage.toFixed(2);
+        var progressBarFill = document.getElementById("progress-bar-fill");
+        progressBarFill.style.width = percentage + "%";
+        progressBarFill.innerHTML = percentage + "%";
+
+    }
+
+    function UpdateProcessBarFull(){
+        var percentage = 100
+        var progressBarFill = document.getElementById("progress-bar-fill");
+        progressBarFill.style.width = percentage + "%";
+        progressBarFill.innerHTML = percentage + "%";
+    }
+
+
+    function DownloadFile(obj){
+        console.log(obj.getAttribute("data-model-name"), obj.getAttribute("data-username"))
+
+
+        var slices = [];
+        var model_name = obj.getAttribute("data-model-name");
+        var version = obj.getAttribute("data-version");
+        var username = obj.getAttribute("data-username");
+        var total_chunks = obj.getAttribute("data-chunks")
+        var filename = obj.getAttribute("data-filename")
+
+
+        var fileUrl = `download_model?model_name=${model_name}&version=${version}&username=${username}`;
+
+        function downloadChunk(ChunkNumber) {
+        $.ajax({
+            url: fileUrl,
+            type: 'GET',
+            headers: {
+                'X-Chunk-Number': ChunkNumber,
+            },
+            processData: false,
+            success: function (chunk) {
+                chunk = chunk.split("==== End Encryption ====")[0];
+                console.log("chunk length", chunk.length, chunk, "idx:", ChunkNumber)
+                var decryptedData = decryptData(chunk);
+                console.log("Decrypted data length:", decryptedData.length);
+
+                slices.push(decryptedData);
+
+                ChunkNumber += 1;
+
+                if (ChunkNumber < total_chunks) {
+                    downloadChunk(ChunkNumber);
+                    UpdateProcessBar(ChunkNumber, total_chunks);
+                } else {
+                    UpdateProcessBarFull();
+
+                    var blob = new Blob(slices, {type: 'application/octet-stream'});
+                    var url = window.URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+
+
+
+                }
+            }
+        });
+        }
+
+        downloadChunk(0)
+    }
+
+
+</script>

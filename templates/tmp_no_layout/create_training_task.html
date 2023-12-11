@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>创建模型训练任务</title>
+    <link rel="stylesheet" href="/static/task/css/task.css">
+
+    <style>
+
+    </style>
+</head>
+<body>
+    <div id="response" style=""></div>
+    <div class="training_container">
+        <h1>创建模型训练任务</h1>
+        <div class="form-field">
+            <label for="model">选择模型:</label>
+            <select id="model">
+                <option value="YOLO">YOLO</option>
+            </select>
+        </div>
+        <div class="form-field">
+            <label for="dataset">选择数据集:</label>
+            <select id="dataset">
+                <option value="WWT">WWT</option>
+            </select>
+        </div>
+        <div class="form-field">
+            <label for="epoch">Epoch:</label>
+            <input type="number" id="epoch" value=10>
+        </div>
+        <div class="form-field">
+            <label for="weight">Weight Initialization:</label>
+            <input type="text" id="weight" value=1>
+        </div>
+        <div class="form-field">
+            <label for="batch_size">Batch Size:</label>
+            <input type="number" id="batch_size" value=2 >
+        </div>
+        <div class="form-field">
+            <label for="learning_rate">Learning Rate:</label>
+            <input type="number" id="learning_rate" step="0.01" value=0.01>
+        </div>
+        <div class="form-field">
+            <label for="activation_function">Activation Function:</label>
+            <select id="activation_function">
+                <option value="ReLU">ReLU</option>
+            </select>
+        </div>
+        <button onclick="createTrainingTask()">创建训练任务</button>
+
+
+    </div>
+
+    <div style="margin-top: 2%">
+    <div class="status-container" style="display: block">
+        <span class="status-label" title="点击查看详情">Idle Nodes:</span>
+        <button id="idleNodes" class="status-value inactive" onclick="showDetails('idleNodes')" onmouseover="showTooltip(this)" onmouseout="hideTooltip(this)"></button>
+
+        <span class="status-label" title="点击查看详情">Pending Tasks:</span>
+        <button id="pendingTasks" class="status-value inactive" onclick="showDetails('pendingTasks')" onmouseover="showTooltip(this)" onmouseout="hideTooltip(this)"></button>
+
+        <span class="status-label" title="点击查看详情">Processing Tasks:</span>
+        <button id="processingTasks" class="status-value inactive" onclick="showDetails('processingTasks')" onmouseover="showTooltip(this)" onmouseout="hideTooltip(this)"></button>
+    </div>
+    <div id="detailsDropdown" class="dropdown-content">
+        <div class="modal-header">
+            <span class="modal-title info" xt-marked="ok">节点任务详情</span>
+            <span class="modal-close" onclick="hideDetails()" xt-marked="ok" style="margin-left: 86%;">X</span>
+        </div>
+        <div id="detailsContent">
+            <div id="detailsIdleNodes" class="details-content" style="">
+
+            </div>
+
+            <div id="detailsPendingTasks" class="details-content" style="">
+
+            </div>
+
+            <div id="detailsProcessingTasks" class="details-content" style="">
+
+            </div>
+            <button class="close" onclick="hideDetails()">Close</button>
+            <button  onclick="hideDetails()">Confirm</button>
+
+        </div>
+  </div>
+    </div>
+
+
+    <script src="/static/task/js/task.js"></script>
+    <script>
+
+        function createTrainingTask() {
+            var model = document.getElementById('model').value;
+            var dataset = document.getElementById('dataset').value;
+            var epoch = document.getElementById('epoch').value;
+            var weight = document.getElementById('weight').value;
+            var batchSize = document.getElementById('batch_size').value;
+            var learningRate = document.getElementById('learning_rate').value;
+            var activationFunction = document.getElementById('activation_function').value;
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/training_model/create_task', true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            xhr.onload = function() {
+
+                if (xhr.status === 200) {
+                    var response = JSON.parse(xhr.responseText);
+
+                    // alert(response.message);
+                    var responseDiv = document.getElementById("response");
+                    responseDiv.textContent = 'Task submitted successfully. Task ID: ' + response.message.task_id;
+                    var a_tag = document.createElement("a");
+                    responseDiv.appendChild(a_tag)
+                    a_tag.style.marginLeft = "10px";
+                    a_tag.innerText = "查看实时日志";
+                    a_tag.target = "_blank"
+                    a_tag.href = "/training_model/progress/" + response.message.task_id;
+
+                } else {
+                    responseDiv.textContent = 'Failed to submit task. Error: ' + data.message;
+                }
+            };
+            xhr.send('model=' + model + '&dataset=' + dataset + '&epoch=' + epoch + '&weight=' + weight + '&batch_size=' + batchSize + '&learning_rate=' + learningRate + '&activation_function=' + activationFunction);
+        }
+
+
+    var socket = new WebSocket("ws://127.0.0.1:8011/training_model/ws_status_update");  // Adjust the WebSocket URL as needed
+
+    update_status(socket)
+
+
+    </script>
+</body>
+</html>
