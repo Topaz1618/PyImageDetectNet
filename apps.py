@@ -29,7 +29,7 @@ from user import (UserDatasetListHandler, UserModelListHandler, DeleteUserDatase
                   SingleDetectionTaskHandler, SingleTrainingTaskHandler,  UserDetectionTaskListHandler, UserTrainingTaskListHandler,
                   DeleteUserDetectionTaskHandler, DeleteUserTrainingTaskHandler)
 
-from task_queue_listener import listen_idle_detect_task_workers
+from task_queue_listener import listen_idle_detect_task_workers, my_process
 # from task_handler import DetectTaskHandler, TrainingTaskHandler
 
 
@@ -37,9 +37,8 @@ define("port", default=8011, help="run on the given port", type=int)
 
 
 def process_function():
-
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(listen_idle_detect_task_workers())
+    loop.run_until_complete(my_process())
 
 
 if __name__ == "__main__":
@@ -78,33 +77,25 @@ if __name__ == "__main__":
         (r'/managers/get_models', GetModelsHandler),
         (r'/managers/delete_dataset', DeleteDatasetManagerHandler),
         (r'/managers/delete_model', DeleteModelManagerHandler),
-
-        (r'/managers/get_detection_tasks', GetDetectionTaskListHandler),  # 我的任务
-        (r'/managers/get_training_tasks', GetTrainingTaskListHandler),  # 我的任务
-        (r'/managers/delete_training_task', DeleteDetectionTaskHandler),  # 删除任务
-        (r'/managers/delete_detection_task', DeleteTrainingTaskHandler),  # 删除任务
-        (r'/managers/single_detection_task', GetSingleDetectionTaskHandler),  # 单独任务
+        (r'/managers/get_detection_tasks', GetDetectionTaskListHandler),
+        (r'/managers/get_training_tasks', GetTrainingTaskListHandler),
+        (r'/managers/delete_training_task', DeleteDetectionTaskHandler),
+        (r'/managers/delete_detection_task', DeleteTrainingTaskHandler),
+        (r'/managers/single_detection_task', GetSingleDetectionTaskHandler),
         (r'/managers/single_training_task', GetSingleTrainingTaskHandler),
 
-        # (r'/managers/single_task', SingleTaskHandler),
-
-
-        # 用户
-        # (r'/user/download_detection_file', DownloadDetectionFileHandler),
-
-        (r'/user/get_datasets', UserDatasetListHandler),  # 我的数据集
-        (r'/user/get_models', UserModelListHandler),  # 我的模型
-        (r'/user/delete_dataset', DeleteUserDatasetHandler),     # 删除数据集
-        (r'/user/delete_model', DeleteUserModelHandler),         # 删除模型
-        (r'/user/get_detection_tasks', UserDetectionTaskListHandler),                  # 我的任务
-        (r'/user/get_training_tasks', UserTrainingTaskListHandler),  # 我的任务
-        (r'/user/delete_training_task', DeleteUserTrainingTaskHandler),  # 删除任务
-        (r'/user/delete_detection_task', DeleteUserDetectionTaskHandler),            # 删除任务
-        (r'/user/single_detection_task', SingleDetectionTaskHandler),             # 单独任务
+        (r'/user/get_datasets', UserDatasetListHandler),
+        (r'/user/get_models', UserModelListHandler),
+        (r'/user/delete_dataset', DeleteUserDatasetHandler),
+        (r'/user/delete_model', DeleteUserModelHandler),
+        (r'/user/get_detection_tasks', UserDetectionTaskListHandler),
+        (r'/user/get_training_tasks', UserTrainingTaskListHandler),
+        (r'/user/delete_training_task', DeleteUserTrainingTaskHandler),
+        (r'/user/delete_detection_task', DeleteUserDetectionTaskHandler),
+        (r'/user/single_detection_task', SingleDetectionTaskHandler),
         (r'/user/single_training_task', SingleTrainingTaskHandler),
 
-        #
-        # 识别检测
+
         (r'/detect/create_task', CreateDetectTaskHandler),
         (r'/detect/cancel_task', CancelDetectTaskHandler),
         (r'/detect/upload', UploadDetectFileHandler),
@@ -113,21 +104,18 @@ if __name__ == "__main__":
         (r'/detect/ws_status_update', WsDetectStatusUpdateHandler),
         (r'/detect/result/([^/]+)', GetDetectResultHandler),
 
-        #  模型训练
         (r'/training_model/create_task', CreateTrainingTaskHandler),
         (r'/training_model/cancel_task', CancelTrainingTaskHandler),
         (r'/training_model/progress/([^/]+)', TrainingTaskProgressHandler),
         (r'/training_model/result/([^/]+)', GetDetectResultHandler),
         (r'/training_model/wsprogress', WsTrainingTaskProgressHandler),
         (r'/training_model/ws_status_update', WsTrainingStatusUpdateHandler),
-
         (r'/training_model/check_is_model_exists', CheckIsModelExistsHandler),
         (r'/training_model/check_is_dataset_exists', CheckIsDatasetExistsHandler),
-
         (r'/training_model/upload_model', UploadModelHandler),
         (r'/training_model/upload_dataset', UploadDatasetHandler),
 
-        # 任务监听
+
         (r'/monitor/is_detect_worker_alive', CheckDetectWorkerStatusHandler),
         (r'/monitor/is_training_model_alive', CheckTrainingWorkerStatusHandler),
     ], debug=True, **settings)
@@ -139,7 +127,6 @@ if __name__ == "__main__":
     # application.training_total_workers_num = len(TRAINING_WORKER_LIST)
 
     try:
-
         loop = asyncio.get_event_loop()
         # asyncio.gather(listen_idle_detect_task_workers(application))
         # task = asyncio.create_task(listen_idle_detect_task_workers(application))

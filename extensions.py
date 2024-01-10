@@ -35,7 +35,6 @@ class AsyncGridFSManager(MongoDBManager):
         super().__init__()
 
     async def upload_chunk(self, data, filename):
-        print("!!!!",filename)
         upload_stream = self.fs.open_upload_stream(filename=filename)
         try:
             await upload_stream.write(data)
@@ -64,11 +63,6 @@ class AsyncGridFSManager(MongoDBManager):
 
 
 class DetectionTaskManager(MongoDBManager):
-    """
-    A manager class for user-related operations in MongoDB.
-    Inherits from MongoDBManager.
-    """
-
     def __init__(self):
         super().__init__()
 
@@ -508,7 +502,7 @@ class DetectionFileManager(MongoDBManager):
 if __name__ == "__main__":
     # Detection task
 
-    task_id = str(uuid.uuid4())  # 生成唯一的任务ID
+    task_id = str(uuid.uuid4())
     create_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     user_id = "Topaz"
     model = "Tesseract"

@@ -137,7 +137,7 @@ class CreateDetectTaskHandler(BaseHandler):
         username, account_name, is_admin = get_account_info(cookie_token, token)
 
         model = self.get_argument('detect_model')
-        # 获取上传的文件数据
+
         detect_file_obj = self.request.files.get('detect_file')
         if not detect_file_obj:
             self.write({'status': 'failed', "message": "Detect file does not exists"})
@@ -174,7 +174,6 @@ class CancelDetectTaskHandler(BaseHandler):
                 {"Task ID": "", "error_code": ""}
         """
 
-        # 处理添加任务的逻辑
         task_id = self.get_argument('task_id')
         task_info = get_task_info(task_id)
         task_pid = task_info.get("task_pid")
@@ -228,12 +227,12 @@ class UploadDetectFileHandler(BaseHandler):
             detection_file_obj = DetectionFileManager()
             created_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             detection_file_obj.create_file(filename, task_id, username, total_chunks, created_time)
+            detection_file_obj.update_file_status(filename, task_id, "num", chunk_number)
 
         if chunk_number == total_chunks:
             detection_file_obj = DetectionFileManager()
+            detection_file_obj.update_file_status(filename, task_id, "num", chunk_number)
             detection_file_obj.update_file_status(filename, task_id, "upload_status", UploadStatus.COMPLETED.value)
-
-        # 保存模型到数据库的逻辑
 
         self.set_status(200)
         self.write({'status': 'success', 'message': '模型上传成功。'})
