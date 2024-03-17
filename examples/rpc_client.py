@@ -17,8 +17,8 @@ args = parser.parse_args()
 
 
 # WORKER_IP = "106.52.115.11"  # 替换成真正的 worker IP
-
-WORKER_IP = "81.71.15.27"
+WORKER_IP = "127.0.0.1"
+# WORKER_IP = "81.71.15.27"
 RPC_PORT = 4000
 
 

@@ -5,9 +5,20 @@ class FileType(Enum):
     PDF = 0
     OTHERS = 1
 
+
 class UserLevel(Enum):
     NORMAL = 0  # Represents a normal user
     ADMIN = 1   # Represents an admin user
+
+
+class MaterialFileType(Enum):
+    ID_CARD = ("身份证", "id_card")
+    HOUSEHOLD_REGISTER = ("户口本", "household_register")
+    HOUSE_FLOOR_PLAN = ("房屋平面图", "house_floor_plan")
+    REAL_ESTATE_APPLICATION = ("不动产申请表", "real_estate_application")
+
+    def get_file_name(self):
+        return self.value[1]
 
 
 class TaskType(Enum):

@@ -71,7 +71,7 @@ async def listen_idle_detect_task_workers():
             logger.debug(f"Detection Node: Used [{used_detect_nodes if used_detect_nodes else 'None'}] | Idle [{idle_detect_node}]")
             logger.debug(f"Training Node: Used [{used_training_nodes if used_training_nodes else 'None'}] | Idle [{idle_training_node}]")
 
-        # ForkedPdb().set_trace()
+        ForkedPdb().set_trace()
         if idle_detect_node:
             rpc_server_ip = detect_nodes.get(idle_detect_node, {}).get("ip", None)
 

@@ -90,7 +90,7 @@ class DetectionTaskManager(MongoDBManager):
         if not is_admin or is_personal:
             query["user_id"] = user
 
-        tasks = self.detect_task_collection.find(query).skip(start).limit(end - start)
+        tasks = self.detect_task_collection.find(query).skip(start).limit(end - start).sort("_id", -1)
 
         all_task_list = list()
         for task in tasks:

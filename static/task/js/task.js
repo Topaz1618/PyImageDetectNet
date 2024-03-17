@@ -274,7 +274,14 @@ function UpdateDetailsProcessingTasks(detailsId, data){
             taskIDElement.classList.add('badge_node', 'bg-green');
 
             var a_tag = document.createElement('a')
-            a_tag.href = "progress/" + taskId
+
+            var path = window.location.pathname
+            if (path.includes("training")){
+                a_tag.href = "training_model/progress/" + taskId
+            }else{
+                a_tag.href = "detect/progress/" + taskId
+            }
+
             a_tag.target = "_blank";
             a_tag.innerText = 'Task ID: ' + taskId;
             a_tag.style.color = "white"

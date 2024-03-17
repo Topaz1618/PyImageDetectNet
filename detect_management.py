@@ -1,3 +1,4 @@
+import os
 import uuid
 import json
 import asyncio
@@ -18,7 +19,7 @@ from account_utils import (get_token_user, get_account_info, admin_login_redirec
                            auth_login_redirect, async_auth_login_redirect)
 from file_utils import generate_detect_file_gridfs_save_name
 from extensions import UserManager, ModelsManager, DatasetsManager, AsyncGridFSManager, DetectionFileManager, DetectionTaskManager
-from enums import TaskType, TaskStatus, TaskInfoKey, UploadStatus
+from enums import TaskType, TaskStatus, TaskInfoKey, UploadStatus, MaterialFileType
 from config import detect_nodes, RPC_PORT
 
 
@@ -236,6 +237,44 @@ class UploadDetectFileHandler(BaseHandler):
 
         self.set_status(200)
         self.write({'status': 'success', 'message': '模型上传成功。'})
+
+
+class DetectionSyncHandler(BaseHandler):
+    def _save_result(self, file_name, file_content):
+        target_path = '' + file_name
+
+        with open(target_path, 'wb') as file:
+            file.write(file_content)
+
+    async def _write_file_async(self, file_name, file_content):
+        await asyncio.get_event_loop().run_in_executor(None, self._save_result, file_name, file_content)
+
+    def _generate_sync_folder(self, path,  material_type):
+        sync_folder = os.path.join(self.application.settings.get("static_path"), "images", "sync_files", path)
+        if not os.path.exists(sync_folder):
+            os.makedirs(sync_folder)
+
+        for enum_member in MaterialFileType:
+            if enum_member.value[0] == material_type:
+                file_name = enum_member.get_file_name()
+                return os.path.join(sync_folder, f"{file_name}.jpg")
+
+    async def post(self):
+        try:
+            file_obj = self.request.files['file'][0]
+            file_content = file_obj['body']
+            path = self.get_argument('path')
+            material_type = self.get_argument('material_type')
+
+            sync_folder = self._generate_sync_folder(path, material_type)
+            if sync_folder:
+                await self._write_file_async(sync_folder, file_content)
+                self.set_status(200)
+                self.finish()
+        except Exception as e:
+            self.set_status(500)
+
+
 
 
 class GetModelsHandler(BaseHandler):

@@ -6,6 +6,7 @@ from extensions import (DatasetsManager, ModelsManager, TrainingTaskManager, Det
 from file_utils import generate_dataset_gridfs_save_name, generate_model_gridfs_save_name
 from account_utils import (get_token_user, get_account_info, admin_login_redirect, async_admin_login_redirect,
                            auth_login_redirect, async_auth_login_redirect)
+from utils import string_to_dict, res_dict
 
 
 class UserDatasetListHandler(BaseHandler):
@@ -86,7 +87,25 @@ class UserDetectionTaskListHandler(BaseHandler):
         task_list = task_obj.get_tasks(0, task_count, username, is_admin, is_personal=True)
 
         # self.render("user_models.html", data=data_list)
-        self.render("user_detection_tasks.html", username=username, account_name=account_name, is_admin=is_admin, task_list=task_list)
+        self.render("user_detection_tasks.html", username=username, account_name=account_name, is_admin=is_admin, task_list=task_list
+                    , string_to_dict=string_to_dict, res_dict=res_dict)
+
+
+class UserDetectionAnalysisListHandler(BaseHandler):
+    @async_auth_login_redirect
+    async def get(self):
+        # 处理获取数据集管理的逻辑
+        cookie_token = self.get_secure_cookie("token")
+        token = self.get_argument("Authorization", None)
+        username, account_name, is_admin = get_account_info(cookie_token, token)
+
+        task_obj = DetectionTaskManager()
+        task_count = task_obj.get_tasks_count(username, is_admin)
+        task_list = task_obj.get_tasks(0, task_count, username, is_admin, is_personal=True)
+
+        # self.render("user_models.html", data=data_list)
+        self.render("user_detection_analysis.html", username=username, account_name=account_name, is_admin=is_admin, task_list=task_list
+                    , string_to_dict=string_to_dict, res_dict=res_dict)
 
 
 class UserTrainingTaskListHandler(BaseHandler):
@@ -117,7 +136,9 @@ class SingleDetectionTaskHandler(BaseHandler):
         task_obj = DetectionTaskManager()
 
         task_info = task_obj.get_task(task_id)
+        print(task_info)
         result = task_info["res"]
+
         # self.render("user_models.html", data=data_list)
         self.render("single_detection_task.html", username=username, account_name=account_name, is_admin=is_admin, task_id=task_id, task_result=result)
 

@@ -9,7 +9,7 @@
         var sessionID = "session123"; // 替换为您的会话ID
 
 
-        const socket = new WebSocket("ws://127.0.0.1:8888/ws/" + sessionID);
+        const socket = new WebSocket("ws://" + window.location.host +  "/ws/" + sessionID);
         // WebSocket连接打开时的处理
         socket.onopen = function(event) {
             console.log("WebSocket connection opened.");

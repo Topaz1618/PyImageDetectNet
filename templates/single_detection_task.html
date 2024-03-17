@@ -14,7 +14,7 @@
             <button class="span_button modal-title info" style="width: 28%;font-size: 1.3rem; "> 识别文件名称 </button>
             <button class="span_button modal-title info" style="width: 12%;font-size: 1.3rem;"> 文件类型 </button>
             <button class="span_button modal-title info" style="width: 12%;font-size: 1.3rem;"> 材料类型 </button>
-            <button class="span_button modal-title info" style="width: 50%;font-size: 1.3rem;"> 识别结果 </button>
+            <button class="span_button modal-title info" style="width: 28%;font-size: 1.3rem;"> 识别结果 </button>
 <!--            <button class="span_button modal-title info" style="width: 16%;font-size: 1.3rem;"> 置信度 </button>-->
 
         </li>
@@ -29,7 +29,7 @@
             <button class="modal-title  span_button" style="width: 12%; color: #5630aac7; font-weight: normal" > UNKNOWN </button>
         {% end %}
         {% if "result" in item %}
-            <button  class="modal-title  span_button" style="width: 50%; color: #5630aac7; font-weight: normal" >
+            <button  class="modal-title  span_button" style="width: 28%; color: #5630aac7; font-weight: normal" >
                 {% if "material_type" in item %}
                 <a data-result ="{{ item['result'] }}" data-material ="{{ item['material_type'] }}" data-filename="{{ filename }}"  onclick="updateTextarea(this)" href="#json"> 点击查看 JSON 结果 </a>
                 {% else %}
@@ -37,9 +37,12 @@
 
                 {% end %}
             </button>
-          {% else %}
-             <button class="modal-title  span_button" style="width: 50%; color: #5630aac7; font-weight: normal" > 无识别结果 </button>
-          {% end %}
+        {% else %}
+
+             <button class="modal-title  span_button" style="width: 28%; color: #5630aac7; font-weight: normal" > 非PDF类型 </button>
+
+
+        {% end %}
 
         {% end %}
     </ul>

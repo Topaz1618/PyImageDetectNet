@@ -1,6 +1,6 @@
 # Configure of MongoDB server addresses
-# HOST = "82.157.31.231"
-HOST = '10.211.55.8'
+HOST = "43.138.116.45"
+# HOST = '10.211.55.8'
 
 MONGODB_SERVERS = [
     f'{HOST}:30001',
@@ -14,8 +14,8 @@ FileSystem = 'filesystem'
 GRIDFS_COLLECTION_NAME = "dfs"
 
 # Configure of Redis
-# REDIS_HOST = "82.157.31.231"
-REDIS_HOST = '10.211.55.8'
+REDIS_HOST = "43.138.116.45"
+# REDIS_HOST = '10.211.55.8'
 REDIS_PORT = 6379
 
 RPC_PORT = 4000
@@ -28,21 +28,25 @@ DETECT_DATA_PATH = "detect_data"
 # Detect任务处理节点
 detect_nodes = {
     "detect_node1": {
-        # "ip": "127.0.0.1",
-        "ip": '10.211.55.8',
-        # "ip": "81.71.15.27",
-        "capacity": 2,  # 初始能力数值为1
+        # "ip": '10.211.55.8',
+        "ip": "101.33.231.57",
+        "capacity": 1,  # 初始能力数值为1
     },
+    # "detect_node2": {
+    #     "ip": '10.211.55.8',
+    #     "capacity": 1,  # 初始能力数值为1
+    # },
 }
 
 # Training任务处理节点
 training_nodes = {
     "training_node1": {
-        "ip": "81.71.15.27",
+        # "ip": "81.71.15.27",
+        "ip": "134.175.73.72",
         "capacity": 2,  # 初始能力数值为1
     },
     "training_node2": {
-        "ip": "127.0.0.1",
+        "ip": "134.175.73.72",
         "capacity": 0,  # 初始能力数值为1
     },
 }

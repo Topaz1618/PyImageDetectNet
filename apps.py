@@ -13,7 +13,8 @@ from file_management import UploadPackageHandler, DownloadFileHandler
 
 
 from detect_management import (CreateDetectTaskHandler, CancelDetectTaskHandler, GetDetectResultHandler,
-                               DetectTaskProgressHandler, WsDetectTaskProgressHandler, WsDetectStatusUpdateHandler, UploadDetectFileHandler)
+                               DetectTaskProgressHandler, WsDetectTaskProgressHandler, WsDetectStatusUpdateHandler,
+                               UploadDetectFileHandler, DetectionSyncHandler)
 
 from training_management import (CreateTrainingTaskHandler, CancelTrainingTaskHandler, UploadModelHandler,
                                  UploadDatasetHandler, WsTrainingTaskProgressHandler, TrainingTaskProgressHandler, WsTrainingStatusUpdateHandler,
@@ -27,7 +28,7 @@ from backend import (GetDatasetsHandler, GetModelsHandler, DeleteDatasetManagerH
 
 from user import (UserDatasetListHandler, UserModelListHandler, DeleteUserDatasetHandler, DeleteUserModelHandler,
                   SingleDetectionTaskHandler, SingleTrainingTaskHandler,  UserDetectionTaskListHandler, UserTrainingTaskListHandler,
-                  DeleteUserDetectionTaskHandler, DeleteUserTrainingTaskHandler)
+                  DeleteUserDetectionTaskHandler, DeleteUserTrainingTaskHandler, UserDetectionAnalysisListHandler)
 
 from task_queue_listener import listen_idle_detect_task_workers, my_process
 # from task_handler import DetectTaskHandler, TrainingTaskHandler
@@ -72,7 +73,6 @@ if __name__ == "__main__":
         # (r'/download_file', DownloadFileHandler),
 
         ## 后台管理
-
         (r'/managers/get_datasets', GetDatasetsHandler),
         (r'/managers/get_models', GetModelsHandler),
         (r'/managers/delete_dataset', DeleteDatasetManagerHandler),
@@ -89,12 +89,12 @@ if __name__ == "__main__":
         (r'/user/delete_dataset', DeleteUserDatasetHandler),
         (r'/user/delete_model', DeleteUserModelHandler),
         (r'/user/get_detection_tasks', UserDetectionTaskListHandler),
+        (r'/user/get_detection_analysis', UserDetectionAnalysisListHandler),
         (r'/user/get_training_tasks', UserTrainingTaskListHandler),
         (r'/user/delete_training_task', DeleteUserTrainingTaskHandler),
         (r'/user/delete_detection_task', DeleteUserDetectionTaskHandler),
         (r'/user/single_detection_task', SingleDetectionTaskHandler),
         (r'/user/single_training_task', SingleTrainingTaskHandler),
-
 
         (r'/detect/create_task', CreateDetectTaskHandler),
         (r'/detect/cancel_task', CancelDetectTaskHandler),
@@ -102,6 +102,7 @@ if __name__ == "__main__":
         (r'/detect/progress/([^/]+)', DetectTaskProgressHandler),
         (r'/detect/wsprogress', WsDetectTaskProgressHandler),
         (r'/detect/ws_status_update', WsDetectStatusUpdateHandler),
+        (r'/detect/sync', DetectionSyncHandler),
         (r'/detect/result/([^/]+)', GetDetectResultHandler),
 
         (r'/training_model/create_task', CreateTrainingTaskHandler),

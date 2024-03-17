@@ -72,7 +72,7 @@ def decompress_zip(task_id, zip_file_path):
     with zipfile.ZipFile(zip_file_path, 'r') as zf:
 
         for fn in zf.namelist():
-            right_fn = fn.encode('cp437').decode('utf-8')  # 将文件名正确编码
+            right_fn = fn.encode('cp437').decode('gbk')  # 将文件名正确编码
 
             if f"{folder_name}/" == right_fn or right_fn.startswith("__"):
                 continue

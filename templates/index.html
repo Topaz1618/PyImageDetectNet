@@ -227,7 +227,7 @@
             console.error('Error:', error);
         });
     });
-    var socket = new WebSocket("ws://127.0.0.1:8011/detect/ws_status_update");  // Adjust the WebSocket URL as needed
+    var socket = new WebSocket("ws://" + window.location.host +  "/detect/ws_status_update");  // Adjust the WebSocket URL as needed
 
     update_status(socket)
 

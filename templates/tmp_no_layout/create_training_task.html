@@ -125,7 +125,7 @@
         }
 
 
-    var socket = new WebSocket("ws://127.0.0.1:8011/training_model/ws_status_update");  // Adjust the WebSocket URL as needed
+    var socket = new WebSocket("ws://" + window.location.host +  "/training_model/ws_status_update");  // Adjust the WebSocket URL as needed
 
     update_status(socket)
 

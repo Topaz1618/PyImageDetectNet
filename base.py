@@ -11,6 +11,7 @@ from extensions import ModelsManager
 secret_key = b'YourSecretKey'
 UPLOAD_DIRECTORY = "upload"
 
+
 class BaseHandler(RequestHandler):
     def get_current_user(self):
         return self.get_secure_cookie("username")

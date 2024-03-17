@@ -176,7 +176,7 @@ function getStatusText(status) {
   return TaskStatusEN[status];
 }
 
-const socket = new WebSocket("ws://127.0.0.1:8011/ws");
+const socket = new WebSocket("ws://" + window.location.host +  "/ws");
 const messagesDiv = document.getElementById("messages");
 
 function updateProgressBar(percentage) {

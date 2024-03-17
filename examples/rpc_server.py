@@ -5,7 +5,7 @@ import multiprocessing as mp
 from enum import Enum
 import psutil
 import aio_msgpack_rpc
-
+from b import yolo_train_wrapper
 
 RPC_SERVER = "127.0.0.1"
 RPC_PORT = 4000
@@ -27,6 +27,11 @@ def kill_all(pids):
 
 
 class MyServicer:
+    async def conn_checker(self, num):
+        print("rpc client conn success")
+        yolo_train_wrapper(123, 2, 1, 0.01)
+        return num + 1
+
     async def start_worker(self, task_type, task_info):
         # Todo: start task by subprocess
 
@@ -85,7 +90,6 @@ class MyServicer:
         else:
             msg = {"error_msg": "Please check the code type.", "error_code": "123"}
             return msg
-
 
 async def rpc_main():
     try:
